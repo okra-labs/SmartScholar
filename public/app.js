@@ -1,31 +1,25 @@
 const $ = (s, root=document) => root.querySelector(s);
 const $$ = (s, root=document) => [...root.querySelectorAll(s)];
-const state = { csrf:'', user:null, universities:[], selected:'iaa', gpaRows:[], gpaResult:null, feeRows:[], feeResult:null, tasks:[], currentView:'dashboard', authMode:'login', iaaCatalog:[], iaaSource:null, selectedIaaProgramme:'', selectedIaaSemester:'' };
+const state = { universities:[
+  {id:'iaa',name:'Institute of Accountancy Arusha',short:'IAA',status:'Calculators available',links:[{label:'Official website',url:'https://www.iaa.ac.tz/'},{label:'Student resources',url:'https://www.iaa.ac.tz/student'}]},
+  {id:'udsm',name:'University of Dar es Salaam',short:'UDSM',status:'Links only',links:[{label:'Official website',url:'https://www.udsm.ac.tz/'}]},
+  {id:'udom',name:'University of Dodoma',short:'UDOM',status:'Links only',links:[{label:'Official website',url:'https://www.udom.ac.tz/'}]},
+  {id:'mzumbe',name:'Mzumbe University',short:'Mzumbe',status:'Links only',links:[{label:'Official website',url:'https://www.mzumbe.ac.tz/'}]},
+  {id:'must',name:'Mbeya University of Science and Technology',short:'MUST',status:'Links only',links:[{label:'Official website',url:'https://www.must.ac.tz/'}]}
+], selected:'iaa', gpaRows:[], gpaResult:null, feeRows:[], feeResult:null, tasks:[], currentView:'dashboard', iaaCatalog:[], iaaSource:null, selectedIaaProgramme:'', selectedIaaSemester:'' };
 const gradesNta45={A:4,B:3,C:2,D:1,F:0};
 const gradesNta68={A:5,'B+':4,B:3,C:2,D:1,F:0};
 function toast(message){const el=$('#toast');el.textContent=message;el.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove('show'),3200)}
 function escapeHtml(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-async function api(url, options={}) {
-  const method=(options.method||'GET').toUpperCase();
-  const headers={...(options.headers||{})};
-  if(options.body && typeof options.body!=='string'){headers['Content-Type']='application/json';options.body=JSON.stringify(options.body)}
-  if(!['GET','HEAD','OPTIONS'].includes(method) && state.csrf) headers['X-CSRF-Token']=state.csrf;
-  const res=await fetch(url,{credentials:'same-origin',...options,method,headers});
-  let data={};try{data=await res.json()}catch{}
-  if(!res.ok) throw new Error(data.error||'Something went wrong.');
-  if(data.csrf)state.csrf=data.csrf;
-  return data;
-}
 function setView(view){
   if(['gpa','fees'].includes(view) && state.selected!=='iaa'){toast('GPA and fee calculators are currently available for IAA only.');return}
   state.currentView=view;
   $$('.view').forEach(el=>el.classList.toggle('active',el.id===`view-${view}`));
   $$('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.view===view));
-  const titles={dashboard:'Your dashboard',gpa:'GPA calculator',fees:'Fee planner',links:'University links',help:'Student help center',planner:'Study planner',account:'Account & saved work'};
+  const titles={dashboard:'Your dashboard',gpa:'GPA calculator',fees:'Fee planner',links:'University links',help:'Student help center',planner:'Study planner'};
   $('#pageTitle').textContent=titles[view]||'SmartScholar';
   $('#crumb').textContent=view==='dashboard'?'STUDENT WORKSPACE':view.toUpperCase().replace('-',' ')+' • SMARTSCHOLAR';
   $('.sidebar').classList.remove('open');
-  if(view==='account')renderAccount();
 }
 function renderUniversitySelect(){
   $('#university').innerHTML=state.universities.map(u=>`<option value="${u.id}">${escapeHtml(u.short)} — ${escapeHtml(u.name)}</option>`).join('');
@@ -79,7 +73,7 @@ function renderGradeRuleNotice(){
   $('#gradeScaleNotice').textContent=msg;
 }
 function loadIaaCatalog(){
-  fetch('/data/iaa-modules.json').then(r=>{if(!r.ok)throw new Error('catalog unavailable');return r.json()}).then(data=>{
+  fetch('data/iaa-modules.json').then(r=>{if(!r.ok)throw new Error('catalog unavailable');return r.json()}).then(data=>{
     state.iaaCatalog=data.modules||[];state.iaaSource=data;
     const programmes=[...new Set(state.iaaCatalog.map(m=>m.programme))].sort((a,b)=>a.localeCompare(b));
     $('#iaaProgramme').innerHTML='<option value="">Choose a programme</option>'+programmes.map(p=>`<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
@@ -155,66 +149,9 @@ function renderTasks(){
   $$('[data-remove-task]').forEach(el=>el.addEventListener('click',()=>{state.tasks.splice(Number(el.dataset.removeTask),1);renderTasks()}));
 }
 function plannerCsv(){downloadCsv('smartscholar-study-plan.csv',[['Task','Due date','Complete'],...state.tasks.map(t=>[t.name,t.date,t.done?'Yes':'No'])])}
-function payloadFor(kind){
-  if(kind==='gpa')return {title:$('#gpaTitle').value,rows:state.gpaRows,result:state.gpaResult,source:'IAA Prospectus 2023/2024'};
-  if(kind==='fees')return {title:$('#feeTitle').value,tuition:$('#courseTuition').value,heslbTuition:$('#heslbTuition').value,paid:$('#paidFees').value,result:state.feeResult,university:'iaa'};
-  return {tasks:state.tasks};
-}
-async function saveCurrent(kind){
-  if(!state.user){openAuth('login');return toast('Sign in or create an account to save this.')}
-  try{const title=kind==='gpa'?$('#gpaTitle').value:kind==='fees'?$('#feeTitle').value:'My study planner';await api('/api/saved',{method:'POST',body:{kind,title:title||'Untitled',payload:payloadFor(kind)}});toast('Saved to your account.');await renderSaved()}catch(e){toast(e.message)}
-}
-async function renderSaved(){
-  const el=$('#savedList');
-  if(!state.user){el.innerHTML='<p class="muted">Sign in to view saved calculations. Guest calculations are not persisted.</p>';return}
-  try{
-    const rows=await api('/api/saved');
-    el.innerHTML=rows.length?rows.map(r=>`<div class="saved-item"><div><b>${escapeHtml(r.title)}</b><small>${escapeHtml(r.kind.toUpperCase())} · ${new Date(r.created_at).toLocaleString()}</small></div><button class="button ghost" data-delete-saved="${escapeHtml(r.id)}">Delete</button></div>`).join(''):'<p class="muted">No saved calculations yet.</p>';
-    $$('[data-delete-saved]').forEach(btn=>btn.addEventListener('click',async()=>{try{await api('/api/saved/'+encodeURIComponent(btn.dataset.deleteSaved),{method:'DELETE'});renderSaved();toast('Saved item deleted.')}catch(e){toast(e.message)}}));
-  }catch(e){el.textContent=e.message}
-}
-function renderAccount(){
-  $('#modeBadge').textContent=state.user?(state.user.verified?'Verified account':'Account · verify email'):'Guest mode';
-  $('#modeBadge').className='pill '+(state.user?'':'guest');
-  $('#authOpen').textContent=state.user?'Sign out':'Sign in';
-  $('#accountPanel').innerHTML=state.user?`<div class="account-grid"><div><h3>${escapeHtml(state.user.email)}</h3><p class="muted">${state.user.verified?'Email verified':'Email verification pending. Configure email delivery before public launch.'}</p></div><button id="logoutBtn" class="button secondary">Sign out</button></div>`:`<div class="account-grid"><div><h3>You're using guest mode</h3><p class="muted">Calculations stay in page memory only. Export them before refreshing. Create an account to save work on the server.</p></div><button class="button primary" id="createAccountBtn">Create account</button></div>`;
-  $('#logoutBtn')?.addEventListener('click',logout);
-  $('#createAccountBtn')?.addEventListener('click',()=>openAuth('register'));
-  renderSaved();
-}
-function openAuth(mode='login'){
-  state.authMode=mode;$('#authModal').classList.remove('hidden');setAuthMode(mode);$('#authMessage').textContent='';
-}
-function setAuthMode(mode){
-  state.authMode=mode;
-  $$('.auth-tabs button').forEach(b=>b.classList.toggle('active',b.dataset.auth===mode));
-  const recovery=mode==='recovery',register=mode==='register';
-  $('#authTitle').textContent=recovery?'Recover account':register?'Create your account':'Welcome back';
-  $('#authPassword').classList.toggle('hidden',recovery);$('#authPassword').required=!recovery;
-  $('#passwordHint').textContent=recovery?'We will show recovery instructions if the account exists.':'Use at least 12 characters.';
-  $('#authForm button[type=submit]').textContent=recovery?'Request recovery':register?'Create account':'Sign in';
-}
-async function submitAuth(e){
-  e.preventDefault();const email=$('#authEmail').value.trim(),password=$('#authPassword').value;
-  const message=$('#authMessage');message.textContent='Working…';
-  try{
-    if(state.authMode==='recovery'){
-      const d=await api('/api/recovery/request',{method:'POST',body:{email}});
-      message.textContent=d.message;return;
-    }
-    const d=await api(state.authMode==='register'?'/api/register':'/api/login',{method:'POST',body:{email,password}});
-    if(state.authMode==='register'){message.textContent=d.message||'Check your email to verify your account.';return}
-    state.user=d.user;$('#authModal').classList.add('hidden');renderAccount();toast(d.message||'Signed in successfully.');
-  }catch(err){message.textContent=err.message}
-}
-async function logout(){
-  try{await api('/api/logout',{method:'POST'})}catch{}
-  state.user=null;state.csrf='';try{const d=await api('/api/bootstrap');state.csrf=d.csrf;state.universities=d.universities;state.user=d.user}catch{}
-  renderAccount();toast('Signed out.');
-}
 async function init(){
   $('#year').textContent=new Date().getFullYear();
-  try{const d=await api('/api/bootstrap');state.csrf=d.csrf;state.user=d.user;state.universities=d.universities;renderUniversitySelect()}catch(e){toast('Could not connect to server. Start the app with npm start.')}
+  renderUniversitySelect();
   loadIaaCatalog();
 
   $$('.nav-item').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));
@@ -236,15 +173,7 @@ async function init(){
   $('#feeExport').addEventListener('click',feeCsv);
   $('#addTask').addEventListener('click',()=>{const name=$('#taskName').value.trim();if(!name)return toast('Enter a task name.');state.tasks.push({name,date:$('#taskDate').value,done:false});$('#taskName').value='';renderTasks()});
   $('#plannerExport').addEventListener('click',plannerCsv);
-  $$('[data-save]').forEach(b=>b.addEventListener('click',()=>saveCurrent(b.dataset.save)));
-  $('#authOpen').addEventListener('click',()=>state.user?logout():openAuth('login'));
-  $('#authClose').addEventListener('click',()=>$('#authModal').classList.add('hidden'));
-  $('#authModal').addEventListener('click',e=>{if(e.target.id==='authModal')$('#authModal').classList.add('hidden')});
-  $$('.auth-tabs button').forEach(b=>b.addEventListener('click',()=>setAuthMode(b.dataset.auth)));
-  $('#authForm').addEventListener('submit',submitAuth);
-  $('#refreshSaved').addEventListener('click',renderSaved);
   $('#menuToggle').addEventListener('click',()=>$('.sidebar').classList.toggle('open'));
-  renderTasks();renderAccount();
-  if(new URLSearchParams(location.search).has('verified'))toast('Email verified. Welcome to SmartScholar.');
+  renderTasks();
 }
 init();

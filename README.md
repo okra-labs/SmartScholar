@@ -1,113 +1,65 @@
-SmartScholar is a web-based student toolkit developed by OkraLabs. It currently provides academic and tuition-planning tools for the Institute of Accountancy Arusha (IAA), including a GPA calculator, a module catalogue, and an estimated fee instalment planner. Account registration, email verification, and password recovery are also included.
+# SmartScholar
 
-The current release supports IAA calculations. Other universities' calculators are not available. The catalogue and grading rules are based on the IAA Prospectus 2023/2024 and should be checked against current official IAA publications before being used for academic or financial decisions. Fee plans are estimates and are not official fee statements.
+SmartScholar is a browser-based student toolkit by OkraLabs. It provides IAA GPA and tuition estimates, an IAA module catalogue, university links, a GPA target simulator, and a study planner.
+
+The project is a static frontend. It has no account system, email service, application database, or backend API. Calculations run in the visitor's browser. Results and study tasks are not sent to a server; use the CSV export buttons to download copies. Refreshing or closing the page clears the current session's inputs and tasks.
 
 ## Features
 
-- GPA calculation using IAA grading scales for NTA Levels 4–8.
-
-- Searchable IAA module catalogue in JSON and CSV formats.
-
-- Custom module rows for courses not found in the catalogue.
-
+- Weighted GPA calculation using the IAA grading scales represented in the data.
+- Searchable IAA module catalogue with credits loaded from the catalogue.
+- Custom GPA rows for modules not listed in the catalogue.
+- GPA target simulator.
 - Estimated tuition instalments after HESLB tuition support and prior payments.
+- CSV export for GPA results, fee estimates, and study plans.
+- University links and student guidance.
 
-- Guest calculations held in browser memory, with user-initiated CSV export.
+## Run locally with Python
 
-- Account registration, email verification, and password recovery when SMTP is configured.
+Requires Python 3.8 or later. From the project root, run:
 
-## Requirements
-
-- Node.js 20 or later
-
-- npm
-
-## Run locally
-
-1. Clone or download this repository.
-
-2. Copy `.env.example` to `.env`.
-
-3. Set `SESSION_SECRET` to a random value of at least 32 characters. For example:
-
-```
-node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+```bash
+python3 run.py
 ```
 
-4. Install dependencies and start the server:
+Then open `http://localhost:8000`. On Windows, use `python run.py` if `python3` is not available.
 
-```
-npm install
-npm start
-```
+The Python script uses the standard library's static file server. The application logic runs in the browser using HTML, CSS, and JavaScript.
 
-5. Open the local URL configured by `PORT` and `APP_BASE_URL` (default: `http://localhost:8080`).
+## Free static deployment on Render
 
-For local account registration and password recovery, configure the SMTP settings in `.env`. Without SMTP, email-dependent registration is unavailable.
+1. In Render, choose **New → Static Site** and connect this GitHub repository.
+2. Set the branch to `main`.
+3. Set **Publish Directory** to `public`. Leave the build command blank.
+4. Create the site. Render will provide a public URL and can redeploy when changes are pushed to the connected branch.
+
+The deployment needs no secrets, SMTP settings, database, or paid persistent storage.
 
 ## Academic data and GPA method
 
-The catalogue is stored in `public/data/iaa-modules.json` and `public/data/iaa-modules.csv`. It contains 1,556 module records across 56 programme labels extracted from the IAA Prospectus 2023/2024. NTA levels are inferred from module codes where available. Some titles or classes may be incomplete or affected by the source PDF's formatting.
+The catalogue is in `public/data/iaa-modules.json` and `public/data/iaa-modules.csv`. It contains 1,556 module records across 56 programme labels extracted from the IAA Prospectus 2023/2024. NTA levels are inferred from module codes where available. Some titles or classes may be incomplete or affected by the source PDF's formatting. Verify catalogue entries and grading rules against current official IAA publications before relying on them for formal academic decisions.
 
-The calculator uses the credit-weighted formula:
+The GPA formula is:
 
 `GPA = sum(grade points × credit hours) / sum(credit hours)`
 
-The displayed cumulative GPA is truncated to one decimal place. The prospectus grading tables represented in this release are:
+The displayed cumulative GPA is truncated to one decimal place. The represented prospectus grading tables are:
 
 - NTA Levels 4–5: A = 4, B = 3, C = 2, D = 1, F = 0.
-
 - NTA Levels 6–8: A = 5, B+ = 4, B = 3, C = 2, D = 1, F = 0.
 
-The source table does not define a grade-point mapping for NTA Level 9, so the calculator does not produce a result when a Level 9 module is included. Catalogue data and grading rules should be verified against current official IAA sources.
+The prospectus grade-point table does not specify an NTA Level 9 mapping, so the GPA calculator does not produce a result for Level 9 modules.
 
 ## Fee estimates
 
-The fee planner accepts total course tuition, HESLB tuition allocation, and tuition already paid. It applies the HESLB allocation first, then estimates payments of 40% before admission or registration, 20% before CAT, and 40% before UE. Rounding differences are applied to the final instalment. These estimates do not replace an official IAA fee statement; amounts and due dates may change.
-
-## Deployment
-
-A public GitHub repository makes the source code available; it does not by itself host a working website. To make SmartScholar accessible through a public link, deploy it to a Node.js host and configure the environment for that host.
-
-Production deployments require HTTPS, `NODE_ENV=production`, an HTTPS `APP_BASE_URL`, a strong `SESSION_SECRET`, SMTP credentials, and persistent storage for the SQLite database. The database setup is designed for a single application instance. Multi-instance deployments require a shared database and session/rate-limit storage strategy. Test email delivery, database persistence, backups, and restore procedures in the chosen hosting environment.
-
-## Configuration
-
-See `.env.example` for the available settings:
-
-- `PORT` — web server port.
-
-- `SESSION_SECRET` — secret used to protect session data.
-
-- `DATABASE_PATH` — SQLite database location.
-
-- `APP_BASE_URL` — application URL used in email links.
-
-- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM` — outbound email provider configuration.
-
-- `BACKUP_DIR` — optional backup directory outside the public web root.
-
-Keep `.env`, database files, and backups out of version control. `.gitignore` excludes these by default.
-
-## Privacy and security
-
-Guest calculations remain in browser memory and are cleared when the page is refreshed or closed. The server maintains a guest session for CSRF protection but does not persist guest calculation contents. CSV files are downloaded only when a user initiates an export.
-
-Verification links expire after 30 minutes. Password-reset links expire after 15 minutes and are single-use; only token hashes are stored. Accounts and session data are stored in SQLite. Before accepting real student information, provide an appropriate privacy notice and account/data management process, secure the hosting environment, configure and test backups, and review applicable privacy requirements.
-
-The application includes baseline security controls, but has not been independently security-certified. Review the implementation and hosting configuration before production use. The in-memory rate limiter is intended for a single instance.
+The fee planner accepts total course tuition, HESLB tuition allocation, and tuition already paid. It deducts HESLB support first, then estimates payments of 40% before registration/admission, 20% before Continuous Assessment Tests (CAT), and 40% before University Examinations (UE). Rounding differences are applied to the final instalment. This estimate does not replace an official fee statement; confirm current amounts and due dates with IAA.
 
 ## Project structure
 
-- `server.js` — Express server, account APIs, sessions, and SQLite setup.
-
-- `public/` — web interface, styles, client-side tools, and catalogue data.
-
-- `test/` — smoke tests.
-
-- `DATA_SCHEMA.md` — format for institution and curriculum data.
-
-- `SECURITY.md` — security reporting and deployment guidance.
+- `public/` — static website, client-side logic, styles, and IAA catalogue.
+- `run.py` — local Python static file server.
+- `DATA_SCHEMA.md` — recommended structure and provenance fields for academic data.
+- `SECURITY.md` — privacy and security notes for the static application.
 
 ## License and data attribution
 

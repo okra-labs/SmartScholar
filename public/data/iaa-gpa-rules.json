@@ -1,0 +1,28 @@
+{
+  "institution": "Institute of Accountancy Arusha (IAA)",
+  "source_title": "IAA Prospectus 2023/2024",
+  "source_section": "Assessment of Students’ Performance Regulations 2022 (Revised), printed page 163",
+  "formula": "sum(grade_points * credit_hours) / sum(credit_hours)",
+  "display_rule": "truncate cumulative GPA after the first decimal place; do not round",
+  "grade_scales": {
+    "NTA Levels 4-5": {
+      "A": 4,
+      "B": 3,
+      "C": 2,
+      "D": 1,
+      "F": 0
+    },
+    "NTA Levels 6-8": {
+      "A": 5,
+      "B+": 4,
+      "B": 3,
+      "C": 2,
+      "D": 1,
+      "F": 0
+    }
+  },
+  "unsupported_levels": {
+    "NTA Level 9": "The supplied prospectus grade-point table does not specify a mapping for NTA Level 9. SmartScholar blocks official GPA calculation for these modules until IAA confirms the applicable rule."
+  },
+  "data_status": "Static rule transcribed from the supplied 2023/2024 prospectus; confirm against the current IAA regulations before formal use."
+}
