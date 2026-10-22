@@ -1,0 +1,10 @@
+{
+  "name": "SmartScholar by OkraLabs",
+  "short_name": "SmartScholar",
+  "description": "Student tools, GPA planning and fee estimates",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f8f5",
+  "theme_color": "#0d302b",
+  "icons": []
+}

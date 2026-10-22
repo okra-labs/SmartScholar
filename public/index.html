@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0d302b"><meta name="description" content="SmartScholar — student tools by OkraLabs">
+<title>SmartScholar | Student Hub</title><link rel="manifest" href="/manifest.webmanifest"><link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" href="#" aria-label="SmartScholar home"><span class="brain-logo">◉</span><span><b>SmartScholar</b><small>STUDENT INTELLIGENCE HUB</small></span></a>
+    <div class="uni-label">YOUR UNIVERSITY</div>
+    <label class="sr-only" for="university">Choose university</label>
+    <select id="university" class="uni-select"></select>
+    <nav class="nav">
+      <button class="nav-item active" data-view="dashboard"><span>⌂</span> Dashboard</button>
+      <button class="nav-item" data-view="gpa"><span>▦</span> GPA calculator</button>
+      <button class="nav-item" data-view="fees"><span>◈</span> Fee calculator</button>
+      <button class="nav-item" data-view="links"><span>↗</span> University links</button>
+      <button class="nav-item" data-view="help"><span>✆</span> Help center</button>
+      <button class="nav-item" data-view="planner"><span>◷</span> Study planner</button>
+      <button class="nav-item" data-view="account"><span>◎</span> Account & saved</button>
+    </nav>
+    <div class="side-bottom"><div class="okra-mark">✿</div><div><b>Built by OkraLabs</b><small>Learn boldly. Plan smart.</small></div></div>
+  </aside>
+  <main class="main">
+    <header class="topbar"><button id="menuToggle" class="menu-toggle" aria-label="Toggle menu">☰</button><div><div class="eyebrow" id="crumb">STUDENT WORKSPACE</div><h1 id="pageTitle">Your dashboard</h1></div><div class="top-actions"><span id="modeBadge" class="pill guest">Guest mode</span><button id="authOpen" class="button primary">Sign in</button></div></header>
+    <div class="notice"><span>✦</span><div><b>Welcome to SmartScholar</b><p>Choose your university. Calculate as a guest, or sign in to save your work across sessions.</p></div></div>
+    <section id="view-dashboard" class="view active">
+      <div class="hero"><div><span class="pill hero-pill">YOUR ACADEMIC CO-PILOT</span><h2>Make your next move<br><em>with confidence.</em></h2><p>One home for GPA planning, fee estimates, student links, and academic organisation.</p><button class="button light" data-goto="gpa">Calculate my GPA <span>→</span></button></div><div class="hero-art"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="brain-big">◉</div><div class="floating-card float-a">↗ <b>Plan smarter</b></div><div class="floating-card float-b">✦ <b>Stay on track</b></div></div></div>
+      <div class="section-head"><div><span class="eyebrow">QUICK ACTIONS</span><h2>What do you need today?</h2></div><span class="muted">Tools for every student</span></div>
+      <div class="action-grid">
+        <button class="action-card" data-goto="gpa"><span class="icon-box green">▦</span><b>GPA Calculator</b><p>Calculate weighted GPA and explore grade scenarios.</p><span class="card-link">Open calculator →</span></button>
+        <button class="action-card" data-goto="fees"><span class="icon-box gold">◈</span><b>Fee Planner</b><p>Estimate total fees, payments, and remaining balance.</p><span class="card-link">Plan fees →</span></button>
+        <button class="action-card" data-goto="links"><span class="icon-box blue">↗</span><b>Campus Links</b><p>Jump to official university sites and student services.</p><span class="card-link">Browse links →</span></button>
+        <button class="action-card" data-goto="planner"><span class="icon-box purple">◷</span><b>Study Planner</b><p>Organise tasks and deadlines during this visit.</p><span class="card-link">Plan study →</span></button>
+      </div>
+      <div class="section-head"><div><span class="eyebrow">UNIVERSITY DATA</span><h2>Built to expand with you</h2></div></div>
+      <div id="universityCards" class="university-grid"></div>
+      <p class="data-note">Academic credits, official fee schedules, and course catalogues must be verified against each university's current documents. Unverified values are never presented as official.</p>
+    </section>
+    <section id="view-gpa" class="view">
+      <div class="section-head"><div><span class="eyebrow">ACADEMIC PERFORMANCE</span><h2>GPA calculator</h2><p class="muted">Add modules, grades and credits. Your calculation stays in this page until you export or save it.</p></div><button id="gpaExport" class="button secondary">Export CSV</button></div>
+      <div class="panel"><div class="form-row"><div><label for="gpaTitle">Calculation name</label><input id="gpaTitle" value="My GPA calculation" maxlength="100"></div><div><label>IAA grading rules</label><div id="gradeScaleNotice" class="static-rule">Choose an IAA programme and semester to load official module credits and apply the prospectus grading rule.</div></div></div>
+      <div class="form-row three catalog-pickers"><div><label for="iaaProgramme">IAA programme</label><select id="iaaProgramme"><option value="">Loading IAA programmes…</option></select></div><div><label for="iaaSemester">Semester / block</label><select id="iaaSemester"><option value="">Select programme first</option></select></div><div class="align-end"><button id="loadIaaModules" class="button secondary">Load prospectus modules</button></div></div>
+      <p id="catalogStatus" class="muted tiny">Source: IAA Prospectus 2023/2024. Extracted records are marked for verification against the original document.</p>
+      <div class="table-wrap"><table id="gpaTable"><thead><tr><th>Module / code</th><th>Grade</th><th>Credit hours</th><th></th></tr></thead><tbody></tbody></table></div>
+      <div class="row-actions"><button id="addModule" class="button secondary">＋ Add module</button><button id="clearModules" class="button ghost">Clear rows</button><button id="calculateGpa" class="button primary">Calculate GPA</button></div></div>
+      <div id="gpaResult" class="result-panel hidden" aria-live="polite"></div>
+      <div class="panel slim"><h3>GPA target simulator</h3><p class="muted">Estimate the average grade points needed in future credits to reach a target cumulative GPA.</p><div class="form-row three"><div><label for="currentGpa">Current GPA</label><input id="currentGpa" type="number" min="0" max="5" step=".01" placeholder="e.g. 3.4"></div><div><label for="completedCredits">Credits completed</label><input id="completedCredits" type="number" min="0" step="1" placeholder="e.g. 36"></div><div><label for="targetGpa">Target GPA</label><input id="targetGpa" type="number" min="0" max="5" step=".01" placeholder="e.g. 4.0"></div></div><div class="form-row"><div><label for="futureCredits">Future credits included</label><input id="futureCredits" type="number" min="1" step="1" placeholder="e.g. 24"></div><div class="align-end"><button id="simulateGpa" class="button secondary">Simulate target</button></div></div><div id="simResult" class="muted" aria-live="polite"></div></div>
+      <button class="button primary save-current" data-save="gpa">Save this calculation to account</button>
+    </section>
+    <section id="view-fees" class="view">
+      <div class="section-head"><div><span class="eyebrow">MONEY CLARITY</span><h2>Fee planner</h2><p class="muted">IAA only. Estimate your tuition balance after HESLB tuition support and see the 40% / 20% / 40% payment schedule.</p></div><button id="feeExport" class="button secondary">Export CSV</button></div>
+      <div class="panel"><label for="feeTitle">Calculation name</label><input id="feeTitle" value="My fee estimate" maxlength="100"><div class="form-row three fee-summary-inputs"><div><label for="courseTuition">Total course tuition fee (TZS)</label><input id="courseTuition" type="number" min="0" step="1000" value="0"></div><div><label for="heslbTuition">HESLB tuition loan allocated (TZS)</label><input id="heslbTuition" type="number" min="0" step="1000" value="0"></div><div><label for="paidFees">Tuition already paid by you (TZS)</label><input id="paidFees" type="number" min="0" step="1000" value="0"></div></div><p class="muted tiny">IAA MVP estimate: HESLB tuition support is deducted first. The remaining tuition is split into 40% before registration, 20% before Continuous Assessment Tests (CAT), and 40% before University Examinations (UE). Verify your official fee statement.</p><button id="calculateFees" class="button primary">Calculate IAA instalments</button></div>
+      <div id="feeResult" class="result-panel hidden" aria-live="polite"></div><button class="button primary save-current" data-save="fees">Save this estimate to account</button>
+    </section>
+    <section id="view-links" class="view">
+      <div class="section-head"><div><span class="eyebrow">OFFICIAL DESTINATIONS</span><h2>University links</h2><p class="muted">Links are provided for convenience. Confirm portal URLs with your university.</p></div></div><div id="linksGrid" class="links-grid"></div>
+    </section>
+    <section id="view-help" class="view">
+      <div class="section-head"><div><span class="eyebrow">STUDENT SUPPORT</span><h2>Help center</h2><p class="muted">Contact details should be checked on official university channels before relying on them.</p></div></div>
+      <div class="help-grid"><article class="panel"><span class="icon-box green">⌘</span><h3>IT & portal support</h3><p>For login issues, portal access or technical errors, use the official university website to find the current ICT help desk contact.</p></article><article class="panel"><span class="icon-box gold">▤</span><h3>Academic registry</h3><p>For course registration, examination results, transcripts and academic regulations, contact your registrar or academic office.</p></article><article class="panel"><span class="icon-box blue">◈</span><h3>Fees & finance</h3><p>For fee balances, payment control numbers and sponsorship questions, confirm with the university finance office.</p></article><article class="panel"><span class="icon-box purple">?</span><h3>SmartScholar support</h3><p>Report a broken link or incorrect academic data to the SmartScholar project maintainers.</p><a href="mailto:support@okralabs.com" class="text-link">Email project support ↗</a><small class="muted">Placeholder contact — configure before launch.</small></article></div>
+    </section>
+    <section id="view-planner" class="view">
+      <div class="section-head"><div><span class="eyebrow">STAY ORGANISED</span><h2>Study planner</h2><p class="muted">Guest tasks exist only in memory until you leave or refresh this page.</p></div><button id="plannerExport" class="button secondary">Export CSV</button></div>
+      <div class="panel"><div class="form-row three"><div><label for="taskName">Task</label><input id="taskName" maxlength="120" placeholder="e.g. Revise database normalisation"></div><div><label for="taskDate">Due date</label><input id="taskDate" type="date"></div><div class="align-end"><button id="addTask" class="button primary">Add task</button></div></div><div id="taskList" class="task-list"></div></div><button class="button primary save-current" data-save="planner">Save planner to account</button>
+    </section>
+    <section id="view-account" class="view">
+      <div class="section-head"><div><span class="eyebrow">YOUR PRIVATE WORKSPACE</span><h2>Account & saved work</h2><p class="muted">Guest mode does not save calculations on this device. Export before refreshing if you want a copy.</p></div></div>
+      <div id="accountPanel" class="panel"></div><div class="panel"><div class="section-head compact"><div><h3>Saved calculations</h3><p class="muted">Only available when signed in.</p></div><button id="refreshSaved" class="button secondary">Refresh</button></div><div id="savedList" class="saved-list"></div></div>
+      <div class="panel"><h3>Security & privacy</h3><ul class="security-list"><li>Guest calculations remain in JavaScript memory and are not written to localStorage or IndexedDB.</li><li>Signed-in saved calculations are stored server-side against your account.</li><li>Use a unique password of at least 12 characters.</li><li>Production requires HTTPS, configured email delivery, secure backups and a security review.</li></ul></div>
+    </section>
+    <footer><span>© <span id="year"></span> SmartScholar</span><span>Designed with care by <b>OkraLabs</b> <span class="okra-mark mini">✿</span></span></footer>
+  </main>
+</div>
+<div id="authModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="authTitle"><div class="modal-card"><button id="authClose" class="close" aria-label="Close">×</button><span class="brain-logo">◉</span><h2 id="authTitle">Welcome back</h2><p class="muted">Sign in to keep your work with your account.</p><div class="auth-tabs"><button class="active" data-auth="login">Sign in</button><button data-auth="register">Create account</button><button data-auth="recovery">Recover</button></div><form id="authForm"><label for="authEmail">Email address</label><input id="authEmail" type="email" autocomplete="email" required maxlength="254"><label for="authPassword">Password</label><input id="authPassword" type="password" autocomplete="current-password" minlength="12" maxlength="128" required><p class="tiny muted" id="passwordHint">Use at least 12 characters.</p><button class="button primary full" type="submit">Sign in</button><div id="authMessage" role="status" class="auth-message"></div></form></div></div>
+<div id="toast" class="toast" role="status"></div>
+<script src="/app.js" defer></script>
+</body></html>
